@@ -119,6 +119,11 @@ fn random_expand(input: Input) -> Vec<Advertisement> {
     let mut time = Instant::now();
     const TIME_LIMIT: f64 = 4.98;
 
+    // 焼きなまし法のパラメータ
+    let initial_temp = 100.0;
+    let cooling_rate = 0.99;
+    let mut current_temp = initial_temp;
+
     // メインループ
     'main: while (time - input.since).as_secs_f64() / TIME_LIMIT < 1.0 {
         // 反復回数の更新と時間更新
@@ -169,12 +174,28 @@ fn random_expand(input: Input) -> Vec<Advertisement> {
             }
         }
 
-        // 広告の更新
-        if new.area() <= input.requests[index].area
+        // スコアの計算
+        let current_score = calc_score_each(&input.requests[index], &results[index]) as f64;
+        let new_score = calc_score_each(&input.requests[index], &new) as f64;
+
+        // 遷移確率の計算
+        let delta_score = new_score - current_score;
+        let acceptance_probability = if delta_score > 0.0 {
+            1.0
+        } else {
+            (delta_score / current_temp).exp()
+        };
+
+        // 状態遷移の決定
+        if rng.gen_bool(acceptance_probability)
+            && new.area() <= input.requests[index].area
             && new.contains(input.requests[index].row, input.requests[index].col)
         {
             results[index] = new;
         }
+
+        // 温度の更新
+        current_temp *= cooling_rate;
     }
 
     eprintln!("");

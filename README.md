@@ -5,5 +5,5 @@
 ## 実行コマンド
 
 ```sh
-cargo run < tools/in/hoge.txt > out/hoge.txt
+cargo run < tools/in/hoge.txt > tools/out/hoge.txt
 ```

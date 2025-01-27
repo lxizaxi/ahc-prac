@@ -103,28 +103,35 @@ fn main() {
     }
 }
 
-// 時間いっぱい大きくしようとする
 fn random_expand(input: Input) -> Vec<Advertisement> {
+    // 乱数生成器の初期化
     let mut rng = rand_pcg::Pcg64Mcg::new(42);
+
+    // 初期広告の生成:
     let mut results = input
         .requests
         .iter()
         .map(|r| Advertisement::new(r.row, r.col, r.row + 1, r.col + 1))
         .collect::<Vec<_>>();
+
+    // ループの初期化
     let mut iter = 0;
     let mut time = Instant::now();
     const TIME_LIMIT: f64 = 4.98;
 
+    // メインループ
     'main: while (time - input.since).as_secs_f64() / TIME_LIMIT < 1.0 {
+        // 反復回数の更新と時間更新
         iter += 1;
-
         if iter % 100 == 0 {
             time = Instant::now();
         }
 
+        // ランダムな広告の選択
         let index = rng.gen_range(0..input.count);
         let last = &results[index];
 
+        // 広告の拡張
         let (r0, c0, r1, c1) = match rng.gen_range(0..8) {
             0 => (last.row0.wrapping_sub(1), last.col0, last.row1, last.col1),
             1 => (last.row0, last.col0.wrapping_sub(1), last.row1, last.col1),
@@ -147,18 +154,22 @@ fn random_expand(input: Input) -> Vec<Advertisement> {
             _ => unreachable!("arienai!"),
         };
 
+        // マップ範囲のチェック
         if r0 >= MAP_SIZE || c0 >= MAP_SIZE || r1 >= MAP_SIZE || c1 >= MAP_SIZE {
             continue;
         }
 
+        // 新しい広告の生成
         let new = Advertisement::new(r0, c0, r1, c1);
 
+        // 広告の重複チェック
         for (i, ad) in results.iter().enumerate() {
             if i != index && ad.intersects(&new) {
                 continue 'main;
             }
         }
 
+        // 広告の更新
         if new.area() <= input.requests[index].area
             && new.contains(input.requests[index].row, input.requests[index].col)
         {
